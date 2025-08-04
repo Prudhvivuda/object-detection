@@ -4,6 +4,7 @@ from ultralytics import YOLO
 from PIL import Image
 
 model = YOLO("yolo11n.pt")  
+# model = YOLO("kaggle-best.pt")  
 
 def detect_objects(image):
     results = model(image)
