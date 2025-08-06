@@ -16,33 +16,42 @@ def load_image(uploaded_file):
         return image
     except Exception as e:
         st.error(f"❌ Failed to load image: {e}")
-        st.stop()
+        return None
 
 st.set_page_config(page_title="YOLO Comparison", layout="wide")
 st.title("📷 Object Detection and Model Comparison")
 
-uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png", "heic", "heif"])
+uploaded_files = st.file_uploader(
+    "Upload one or more images",
+    type=["jpg", "jpeg", "png", "heic", "heif"],
+    accept_multiple_files=True
+)
 
-if uploaded_file:
-    image = load_image(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_container_width=True)
-    st.markdown("---")
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        image = load_image(uploaded_file)
+        if image is None:
+            continue
 
-    with st.spinner("Running object detection with all models..."):
-        detection_results = detect_objects_all_models(np.array(image))
+        st.image(image, caption=f"Uploaded: {uploaded_file.name}", use_container_width=True)
 
-    # Show 3 models per row
-    model_items = list(detection_results.items())
-    cols_per_row = 3
+        with st.spinner(f"🔍 Running detection on `{uploaded_file.name}`..."):
+            detection_results = detect_objects_all_models(np.array(image))
 
-    for i in range(0, len(model_items), cols_per_row):
-        cols = st.columns(cols_per_row)
-        for col, (model_name, (labels, annotated_img)) in zip(cols, model_items[i:i+cols_per_row]):
-            with col:
-                st.markdown(f"### `{model_name}`")
-                if labels:
-                    st.markdown("**Objects:**")
-                    st.markdown(", ".join(labels))
-                else:
-                    st.warning("No objects detected.")
-                st.image(annotated_img, use_container_width=True)
+        st.markdown("### 🔎 Model Comparison")
+        model_items = list(detection_results.items())
+        cols_per_row = 3
+
+        for i in range(0, len(model_items), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col, (model_name, (labels, annotated_img)) in zip(cols, model_items[i:i+cols_per_row]):
+                with col:
+                    st.markdown(f"**`{model_name}`**")
+                    if labels:
+                        st.markdown("**Objects Detected:**")
+                        st.markdown(", ".join(labels))
+                    else:
+                        st.warning("No objects detected.")
+                    st.image(annotated_img, use_container_width=True)
+
+        st.markdown("---")
